@@ -1,14 +1,14 @@
-#define BLYNK_TEMPLATE_ID "TMPL6zBZ_hCXq"
-#define BLYNK_TEMPLATE_NAME "ESP32 STA SMARTHOME"
-#define BLYNK_AUTH_TOKEN "x3Wnzb9BriKehJMzhzgapnXidjfV1OeQ"
+#define BLYNK_TEMPLATE_ID "xxxxx"
+#define BLYNK_TEMPLATE_NAME "xxxxx"
+#define BLYNK_AUTH_TOKEN "xxxxx"
 
 // Blynk and Wi-Fi
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <BlynkSimpleEsp32.h>
 
-char ssid[] = "Talon";      // Replace with your Wi-Fi SSID
-char pass[] = "abcdef12";  // Replace with your Wi-Fi password
+char ssid[] = "xxxxx";      // Replace with your Wi-Fi SSID
+char pass[] = "xxxxx";  // Replace with your Wi-Fi password
 
 // Other libraries
 #include <Adafruit_Sensor.h>
@@ -26,6 +26,8 @@ DHT dht(DHTPIN, DHTTYPE);
 // Fan
 #define pinFan 2
 #define FAN_CHANNEL 3  // PWM channel for fan
+#define FAN_FREQ 25000  // Fan PWM frequency in Hz
+#define FAN_RESOLUTION 8
 
 // RFID
 #define SS_PIN 5
@@ -47,13 +49,15 @@ unsigned long servoTimer = 0; // For non-blocking servo delay
 bool blynkControl = false;  // Tracks if Blynk is controlling the door
 
 
+int i = 0; 
+
 //neopixel 
 #define LED_PIN 16 
 #define NUM_LEDS 8
 Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 //Light 
-#define LDR_PIN 25
+#define LDR_PIN 33
 
 void setup() {
     Serial.begin(115200);
@@ -71,16 +75,17 @@ void setup() {
 
     // Fan setup
     pinMode(pinFan, OUTPUT);
-    ledcSetup(FAN_CHANNEL, 25000, 8); // PWM channel 0, 25kHz, 8-bit resolution
-    ledcAttachPin(pinFan, FAN_CHANNEL);
+    // ledcSetup(FAN_CHANNEL, FAN_FREQ, FAN_RESOLUTION);  // Set up the PWM properties (freq and resolution)
+    ledcAttach(pinFan, FAN_FREQ, FAN_RESOLUTION); 
     ledcWrite(FAN_CHANNEL, 0); // Fan off initially
 
     //Light
-    pinMode(LDR_PIN, INPUT);
+    pinMode(LDR_PIN, INPUT_PULLUP);
 
     //Neonlight
     strip.begin();
     strip.show();
+    strip.clear();
 
     // Wi-Fi and Blynk setup with status prints
     Serial.print("Connecting to Wi-Fi: ");
@@ -137,8 +142,8 @@ float sendTempData() {
         return -1;
     }
 
-    Blynk.virtualWrite(V2, temperature);  // Send temperature to V2
-    Blynk.virtualWrite(V3, humidity);     // Send humidity to V3
+    // Blynk.virtualWrite(V2, temperature);  // Send temperature to V2
+    // Blynk.virtualWrite(V3, humidity);     // Send humidity to V3
     Serial.print("Temp: ");
     Serial.print(temperature);
     Serial.print(" °C, Humidity: ");
@@ -157,7 +162,7 @@ BLYNK_WRITE(V0) { // Neon light mode selection
             Serial.println("Lights OFF");
             break;
         case 1:
-            colorWipe(strip.Color(0, 0, 255), 50); 
+            colorWipe(strip.Color(0, 0, 255), 20); 
             Serial.println("Lights in NORMAL mode");
             break;
         case 2:
@@ -165,11 +170,11 @@ BLYNK_WRITE(V0) { // Neon light mode selection
             Serial.println("Lights in RAINBOW mode");
             break;
         case 3:
-            strobeEffect(strip.Color(255, 255, 255), 100);
+            strobeEffect(strip.Color(255, 255, 255), 20);
             Serial.println("Lights in FLASH mode");
             break;
         case 4:
-            theaterChase(strip.Color(255, 255, 0), 100);
+            theaterChase(strip.Color(255, 255, 0), 20);
             Serial.println("Lights in MOVING mode");
             break;
         default:
@@ -179,7 +184,7 @@ BLYNK_WRITE(V0) { // Neon light mode selection
 
 
 //Send light sensor data to Blynk
-float sendLightData() {
+int sendLightData() {
     int lightValue = analogRead(LDR_PIN);
 
     if (isnan(lightValue)) {
@@ -197,7 +202,9 @@ float sendLightData() {
 void loop() {
     Blynk.run();  // Handle Blynk communication
     timer.run();  // Run the timer for sensor updates
-
+    int lightValue = sendLightData();
+    Serial.print("read Light intensity: ");
+    Serial.print(lightValue);
     // RFID logic (only if Blynk isn’t controlling)
     if (!blynkControl && mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
         if (isAuthorized(mfrc522.uid.uidByte, mfrc522.uid.size)) {
@@ -238,8 +245,8 @@ void loop() {
         }
     }
 
-    float lightValue = sendLightData();
-      if (lightValue != -1) {
+    
+    
         if (!blynkControl) {
             if (lightValue > 4000) {
                 rainbowCycle(10);
@@ -248,8 +255,12 @@ void loop() {
                 colorWipe(strip.Color(0, 0, 255), 50);  
                 theaterChase(strip.Color(255, 255, 0), 100);  
             } 
+            else{
+              strip.clear();  
+              strip.show();  
+            }
         }
-      }    
+         
 }
 
 bool isAuthorized(byte *uid, byte length) {
@@ -330,5 +341,19 @@ void turnOffNeonLights() {
 
 
 
+// #define LDR_PIN 25  // Connect LDR to GPIO34 (Any ADC pin)
 
+// void setup() {
+//     Serial.begin(115200);
+//     Serial.println("Light Sensor Initialized...");
+//     pinMode(LDR_PIN, INPUT);
+// }
+
+// void loop() {
+//     int lightValue = analogRead(LDR_PIN);  // Read analog value from LDR
+//     Serial.print("Light Intensity: ");
+//     Serial.println(lightValue);  // Print the value - 4000 is dark, 100 is light
+
+//     delay(1000);  // Wait 1 second before next reading
+// }
 
