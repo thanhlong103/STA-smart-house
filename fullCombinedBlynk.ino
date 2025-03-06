@@ -142,8 +142,8 @@ float sendTempData() {
         return -1;
     }
 
-    // Blynk.virtualWrite(V2, temperature);  // Send temperature to V2
-    // Blynk.virtualWrite(V3, humidity);     // Send humidity to V3
+    Blynk.virtualWrite(V2, temperature);  // Send temperature to V2
+    Blynk.virtualWrite(V3, humidity);     // Send humidity to V3
     Serial.print("Temp: ");
     Serial.print(temperature);
     Serial.print(" °C, Humidity: ");
