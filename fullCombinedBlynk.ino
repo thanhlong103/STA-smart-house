@@ -158,7 +158,8 @@ BLYNK_WRITE(V0) { // Neon light mode selection
     int mode = param.asInt(); 
     switch (mode) {
         case 0:
-            turnOffNeonLights();
+            strip.clear();  
+            strip.show();
             Serial.println("Lights OFF");
             break;
         case 1:
@@ -333,10 +334,5 @@ void strobeEffect(uint32_t color, int delayTime) { //flashing lights
 }
 
 
-
-void turnOffNeonLights() {
-    strip.clear();  
-    strip.show();   
-}
 
 
